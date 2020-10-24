@@ -1,0 +1,336 @@
+﻿@page "/Vehicles"
+
+@using System.ComponentModel.DataAnnotations;
+@using System.IO
+@using BlazorCRUD.Entities
+@using BlazorCRUD.Contracts
+@inject ICategoriesManager categoriesManager
+@inject IVehiclesManager vehiclesManager
+@inject IManufacturersManager manufacturersManager
+
+<link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+<style>
+    .sort-th {
+        cursor: pointer;
+    }
+
+    .fa {
+        float: right;
+    }
+</style>
+
+<table width="100%" border="0">
+
+    <tr valign="top">
+
+        <td height="100%" width="60%">
+            @*bgcolor="#b5dcb3"*@
+            <h1>
+                Vehicles
+            </h1>
+
+            <div>
+                <a class="btn btn-primary" @onclick="() => AddVehicle()">Add</a>
+            </div>
+
+            <br />
+
+            @if (vehicleViewModelList == null)
+            {
+                <p><em>Loading...</em></p>
+            }
+            else
+            {
+                <table class="table table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th class="sort-th" @onclick="@(() => SortTable("ID"))">
+                                ID
+                                <span class="fa @(SetSortIcon("ID"))"></span>
+                            </th>
+                            <th class="sort-th" @onclick="@(() => SortTable("OwnerName"))">
+                                OwnerName
+                                <span class="fa @(SetSortIcon("OwnerName"))"></span>
+                            </th>
+                            <th class="sort-th" @onclick="@(() => SortTable("ManufacturerName"))">
+                                ManufacturerName
+                                <span class="fa @(SetSortIcon("ManufacturerName"))"></span>
+                            </th>
+                            <th class="sort-th" @onclick="@(() => SortTable("YearOfManufactue"))">
+                                YearOfManufactue
+                                <span class="fa @(SetSortIcon("YearOfManufactue"))"></span>
+                            </th>
+                            <th class="sort-th" @onclick="@(() => SortTable("WeightInKilo"))">
+                                WeightInKilo
+                                <span class="fa @(SetSortIcon("WeightInKilo"))"></span>
+                            </th>
+                            <th></th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var vehicleViewModel in vehicleViewModelList)
+                        {
+                            <tr>
+                                <td>@vehicleViewModel.ID</td>
+                                <td>@vehicleViewModel.OwnerName</td>
+                                <td>@vehicleViewModel.ManufacturerName</td>
+                                <td>@vehicleViewModel.YearOfManufactue</td>
+                                <td>@vehicleViewModel.WeightInKilo</td>
+                                <td><img src="@vehicleViewModel.IconPath" width="20" /></td>
+                                <td>
+                                    <a class="btn btn-primary" @onclick="() => EditVehicle(vehicleViewModel)">Edit</a>
+                                    <a class="btn btn-danger" @onclick="() => DeleteVehicle(vehicleViewModel.ID)">Delete</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+
+        </td>
+
+        <td width="10%" height="100%"></td>
+
+        <td width="30%" height="100%">
+            @*bgcolor="#aaa"*@
+
+            @if (selectedVehicleViewModel != null)
+            {
+
+                <div>
+                    <br /> <br /> <br />
+
+                    <h4>@editMessage</h4>
+
+                    <EditForm Model="@selectedVehicleViewModel" OnValidSubmit="@HandleValidSubmit">
+                        <DataAnnotationsValidator />
+
+                        <br />
+                        <label class="control-label">Ower's Name</label>
+                        <input class="form-control" @bind-value="@selectedVehicleViewModel.OwnerName" />
+                        <ValidationMessage For="@(() => selectedVehicleViewModel.OwnerName)" />
+
+                        <br />
+                        <label class="control-label">Manufacturer</label>
+                        <select class="form-control" @bind="selectedVehicleViewModel.ManufacturerId">
+                            @foreach (var manufacturer in manufacturerList)
+                            {
+                                <option value="@manufacturer.ID">@manufacturer.Name</option>
+                            }
+                        </select>
+
+                        <br />
+                        <label class="control-label">YearOfManufactue</label>
+                        <select @bind="@selectedVehicleViewModel.YearOfManufactue">
+                            @for (int i = DateTime.Now.Year - 30;
+                            i <= DateTime.Now.Year+1; i++)
+                            {
+                                <option>@i</option>
+                            }
+                        </select>
+
+                        <br/><br/>
+                        <label class="control-label">WeightInKilograms</label>
+                        <input class="form-control" type="number" @bind-value="@selectedVehicleViewModel.WeightInKilo" />
+                        <ValidationMessage For="@(() => selectedVehicleViewModel.WeightInKilo)" />
+
+                        @*<select @bind="@selectedCategory.IconPath">
+                                <option value="@selectedCategory.IconPath"></option>
+                                @foreach (var path in iconPaths)
+                                {
+                                    <option value="@path">@path</option>
+                                }
+                            </select>*@
+                        <br />
+                        @*<buttonclass="btn btn-primary" @onclick="() => UpdateVehicle(selectedVehicleViewModel)">Save</button>*@
+                        <button class="btn btn-primary" type="submit">Save</button>
+                        <button class="btn btn-danger" @onclick="() => Cancel()">Cancel</button>
+
+                    </EditForm>
+
+                </div>
+            }
+
+        </td>
+    </tr>
+
+</table>
+
+
+@code {
+
+        List<Vehicle> vehicleList;
+        List<VehicleViewModel> vehicleViewModelList;
+        VehicleViewModel selectedVehicleViewModel;
+        string[] iconPaths;
+        List<Manufacturer> manufacturerList;
+        List<Category> categoryList;
+        string editMessage;
+
+
+        private async Task ResetUI()
+        {
+            vehicleList = await vehiclesManager.ListAll();
+            vehicleViewModelList = GetVehicleViewModelList(vehicleList, manufacturerList, categoryList);
+            selectedVehicleViewModel = null;
+            editMessage = string.Empty;
+        }
+
+        protected override async Task OnInitializedAsync()
+        {
+            iconPaths = await categoriesManager.GetIconPaths();
+            manufacturerList = await manufacturersManager.ListAll();
+            categoryList = await categoriesManager.ListAll();
+            await ResetUI();
+        }
+
+        protected async Task DeleteVehicle(int id)
+        {
+            await vehiclesManager.Delete(id);
+            vehicleList = await vehiclesManager.ListAll();
+            vehicleViewModelList = GetVehicleViewModelList(vehicleList, manufacturerList, categoryList);
+        }
+
+        protected async Task UpdateVehicle(VehicleViewModel vehicleViewModel)
+        {
+            Vehicle vehicle = new Vehicle
+            {
+                ID = vehicleViewModel.ID,
+                OwnerName = vehicleViewModel.OwnerName,
+                ManufacturerId = vehicleViewModel.ManufacturerId,
+                YearOfManufactue = vehicleViewModel.YearOfManufactue,
+                WeightInKilo = vehicleViewModel.WeightInKilo
+            };
+            if (vehicle.ID > 0)
+            {
+                await vehiclesManager.Update(vehicle);
+            }
+            else
+            {
+                await vehiclesManager.Create(vehicle);
+            }
+            await ResetUI();
+        }
+
+        protected void AddVehicle()
+        {
+            selectedVehicleViewModel = new VehicleViewModel
+            {
+                ManufacturerId = manufacturerList.Min(m => m.ID),
+                YearOfManufactue = DateTime.Now.Year,
+                WeightInKilo = 0
+            };
+            editMessage = "New vehicle";
+    }
+
+    protected void EditVehicle(VehicleViewModel vehicleViewModel)
+    {
+        selectedVehicleViewModel = vehicleViewModel;
+        editMessage = string.Concat("Vehicle Id = ", vehicleViewModel.ID);
+    }
+
+    protected async Task Cancel()
+    {
+        await ResetUI();
+    }
+
+    protected async void HandleValidSubmit()
+    {
+        if (selectedVehicleViewModel != null)
+        {
+            await UpdateVehicle(selectedVehicleViewModel);
+        }
+    }
+
+
+    private bool isSortedAscending;
+    private string activeSortColumn;
+
+    private void SortTable(string columnName)
+    {
+        if (columnName != activeSortColumn)
+        {
+            vehicleViewModelList = vehicleViewModelList.OrderBy(x => x.GetType().GetProperty(columnName).GetValue(x, null)).ToList();
+            isSortedAscending = true;
+            activeSortColumn = columnName;
+
+        }
+        else
+        {
+            if (isSortedAscending)
+            {
+                vehicleViewModelList = vehicleViewModelList.OrderByDescending(x => x.GetType().GetProperty(columnName).GetValue(x, null)).ToList();
+            }
+            else
+            {
+                vehicleViewModelList = vehicleViewModelList.OrderBy(x => x.GetType().GetProperty(columnName).GetValue(x, null)).ToList();
+            }
+
+            isSortedAscending = !isSortedAscending;
+        }
+    }
+
+    private string SetSortIcon(string columnName)
+    {
+        if (activeSortColumn != columnName)
+        {
+            return string.Empty;
+        }
+        if (isSortedAscending)
+        {
+            return "fa-sort-up";
+        }
+        else
+        {
+            return "fa-sort-down";
+        }
+    }
+
+    private List<VehicleViewModel> GetVehicleViewModelList(List<Vehicle> vehicleList, List<Manufacturer> manufacturerList, List<Category> categoryList)
+    {
+        List<VehicleViewModel> vehicleViewModelList = new List<VehicleViewModel>();
+        foreach (var vehicle in vehicleList)
+        {
+            vehicleViewModelList.Add(new VehicleViewModel
+            {
+                ID = vehicle.ID,
+                OwnerName = vehicle.OwnerName,
+                ManufacturerId = vehicle.ManufacturerId,
+                YearOfManufactue = vehicle.YearOfManufactue,
+                WeightInKilo = vehicle.WeightInKilo,
+
+                ManufacturerName = manufacturerList.FirstOrDefault(m => m.ID == vehicle.ManufacturerId) == null ?
+                                        string.Empty :
+                                        manufacturerList.FirstOrDefault(m => m.ID == vehicle.ManufacturerId).Name,
+                IconPath = categoryList.FirstOrDefault(c => vehicle.WeightInKilo >= c.WeightMin && vehicle.WeightInKilo <= c.WeightMax) == null ?
+                            string.Empty :
+                            categoryList.FirstOrDefault(c => vehicle.WeightInKilo >= c.WeightMin && vehicle.WeightInKilo <= c.WeightMax).IconPath
+            }); ; ;
+        }
+        return vehicleViewModelList;
+    }
+
+    protected class VehicleViewModel
+    {
+        public int ID { get; set; }
+
+        [Required]
+        [StringLength(250, ErrorMessage = "OwnerName max length is 250.")]
+        public string OwnerName { get; set; }
+
+        [Required]
+        public int ManufacturerId { get; set; }
+
+        [Required]
+        public int YearOfManufactue { get; set; }
+
+        [Required]
+        [Range(0, 99999, ErrorMessage = "WeightInKilo must be between 0 and 99999.")]
+        public decimal WeightInKilo { get; set; }
+
+        public string ManufacturerName { get; set; }
+        public string IconPath { get; set; }
+    }
+}
