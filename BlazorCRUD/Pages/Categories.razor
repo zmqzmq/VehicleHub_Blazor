@@ -1,0 +1,335 @@
+﻿@page "/Categories"
+
+@using System.ComponentModel.DataAnnotations;
+@using System.IO
+@using BlazorCRUD.Entities
+@using BlazorCRUD.Contracts
+@inject ICategoriesManager categoriesManager
+
+<link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+<style>
+    .sort-th {
+        cursor: pointer;
+    }
+
+    .fa {
+        float: right;
+    }
+</style>
+
+
+
+<table width="100%" border="0">
+
+    <tr valign="top">
+
+        <td height="100%" width="60%">
+
+            <h1>
+                Categories
+            </h1>
+
+            <div>
+                <a class="btn btn-primary" @onclick="() => AddCategory()">Add</a>
+            </div>
+
+            <br />
+
+            @if (categoryViewModelList == null)
+            {
+                <p><em>Loading...</em></p> }
+            else
+            {
+                <table class="table table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th class="sort-th" @onclick="@(() => SortTable("ID"))">
+                                ID
+                                <span class="fa @(SetSortIcon("ID"))"></span>
+                            </th>
+                            <th class="sort-th" @onclick="@(() => SortTable("Name"))">
+                                Name
+                                <span class="fa @(SetSortIcon("Name"))"></span>
+                            </th>
+                            <th class="sort-th" @onclick="@(() => SortTable("WeightMin"))">
+                                WeightMin
+                                <span class="fa @(SetSortIcon("WeightMin"))"></span>
+                            </th>
+                            <th class="sort-th" @onclick="@(() => SortTable("WeightMax"))">
+                                WeightMax
+                                <span class="fa @(SetSortIcon("WeightMax"))"></span>
+                            </th>
+                            <th>Icon</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var categoryViewModel in categoryViewModelList)
+                        {
+                            <tr>
+                                <td>@categoryViewModel.ID</td>
+                                <td>@categoryViewModel.Name</td>
+                                <td>@categoryViewModel.WeightMin</td>
+                                <td>@categoryViewModel.WeightMax</td>
+                                <td><img src="@categoryViewModel.IconPath" width="20" /></td>
+                                <td>
+                                    <a class="btn btn-primary" @onclick="() => EditCategory(categoryViewModel)">Edit</a>
+                                    @if (categoryViewModel.WeightEditable)
+                                    {
+                                        <button class="btn btn-danger" @onclick="() => DeleteCategory(categoryViewModel.ID)">Delete</button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-danger" @onclick="() => DeleteCategory(categoryViewModel.ID)" disabled>Delete</button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+            }
+
+        </td>
+
+        <td width="10%" height="100%"></td>
+
+        <td width="30%" height="100%">
+
+
+            @if (selectedCategoryViewModel != null)
+            {
+            <div>
+                <br /> <br /> <br />
+
+                <h4>@editMessage</h4>
+
+                <EditForm Model="@selectedCategoryViewModel" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+
+                    <br />
+                    <label class="control-label" for="Name">Name</label>
+                    <input class="form-control" id="Name" @bind-value="@selectedCategoryViewModel.Name" />
+                    <ValidationMessage For="@(() => selectedCategoryViewModel.Name)" />
+
+                    @if (selectedCategoryViewModel.WeightEditable)
+                    {
+                        <br />
+                        <label class="control-label" for="WeightMin">WeightMin</label>
+                        <input class="form-control" id="WeightMin" type="number" @bind-value="@selectedCategoryViewModel.WeightMin" />
+                        <ValidationMessage For="@(() => selectedCategoryViewModel.WeightMin)" />
+
+                        <br />
+                        <label class="control-label" for="WeightMax">WeightMax</label>
+                        <input class="form-control" id="WeightMax" type="number" @bind-value="@selectedCategoryViewModel.WeightMax" />
+                        <ValidationMessage For="@(() => selectedCategoryViewModel.WeightMax)" />
+                        <p style="color:red">@weightRangeValidateResult</p>
+                    }
+
+                    <br />
+                    <label class="control-label">IconPath</label>
+                    <select class="form-control" @bind="@selectedCategoryViewModel.IconPath">
+                        @foreach (var path in iconPaths)
+                        {
+                            <option value="@path">@path</option>
+                        }
+                    </select>
+
+                    <br />
+                    @*<button type="button" class="btn btn-primary" @onclick="() => UpdateCategory(selectedCategoryViewModel)">Save</button>*@
+                    <button class="btn btn-primary" type="submit">Save</button>
+                    <button class="btn btn-danger" @onclick="() => Cancel()">Cancel</button>
+
+                </EditForm>
+
+            </div>
+            }
+
+        </td>
+
+    </tr>
+</table>
+
+
+
+
+@code {
+    List<CategoryViewModel> categoryViewModelList;
+    CategoryViewModel selectedCategoryViewModel;
+    List<Category> categoryList;
+    string[] iconPaths;
+    string editMessage;
+    string weightRangeValidateResult;
+    
+    private async Task ResetUI()
+    {
+        categoryList = await categoriesManager.ListAll();
+        categoryViewModelList = GetCategoryViewModelList(categoryList);
+        selectedCategoryViewModel = null;
+        editMessage = string.Empty;
+        weightRangeValidateResult = string.Empty;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        iconPaths = await categoriesManager.GetIconPaths();
+        await ResetUI();
+    }
+
+    protected async Task DeleteCategory(int id)
+    {
+        await categoriesManager.Delete(id);
+        categoryList = await categoriesManager.ListAll();
+        categoryViewModelList = GetCategoryViewModelList(categoryList);
+
+    }
+
+    protected async Task UpdateCategory(CategoryViewModel categoryViewModel)
+    {
+        Category category = new Category
+        {
+            ID = categoryViewModel.ID,
+            Name = categoryViewModel.Name,
+            WeightMin = categoryViewModel.WeightMin,
+            WeightMax = categoryViewModel.WeightMax,
+            IconPath = categoryViewModel.IconPath,
+        };
+        if (category.ID > 0)
+        {
+            await categoriesManager.Update(category);
+        }
+        else
+        {
+            await categoriesManager.Create(category);
+        }
+        await ResetUI();
+    }
+
+    protected void AddCategory()
+    {
+        selectedCategoryViewModel = new CategoryViewModel
+        {
+            IconPath = iconPaths.Length > 0 ? iconPaths[0] : string.Empty,
+            WeightEditable = true
+        };
+        editMessage = "New Category";
+        weightRangeValidateResult = string.Empty;
+    }
+
+    protected void EditCategory(CategoryViewModel categoryViewModel)
+    {
+        selectedCategoryViewModel = categoryViewModel;
+        editMessage = string.Concat("Categorgy Id = ", categoryViewModel.ID);
+        weightRangeValidateResult = string.Empty;
+    }
+
+    protected async Task Cancel()
+    {
+        await ResetUI();
+    }
+
+    protected async void HandleValidSubmit()
+    {
+        if (selectedCategoryViewModel != null)
+        {
+            //validate WeightMin and WeightMax
+            weightRangeValidateResult = await categoriesManager.ValidateCategoryWeightRange(new Category
+            {
+                ID = selectedCategoryViewModel.ID,
+                Name = selectedCategoryViewModel.Name,
+                WeightMin = selectedCategoryViewModel.WeightMin,
+                WeightMax = selectedCategoryViewModel.WeightMax,
+                IconPath = selectedCategoryViewModel.IconPath,
+            }, categoryList);
+
+            if (weightRangeValidateResult == string.Empty)
+            {
+                await UpdateCategory(selectedCategoryViewModel);
+            }
+        }
+    }
+
+    private bool isSortedAscending;
+    private string activeSortColumn;
+
+    private void SortTable(string columnName)
+    {
+        if (columnName != activeSortColumn)
+        {
+            categoryViewModelList = categoryViewModelList.OrderBy(x => x.GetType().GetProperty(columnName).GetValue(x, null)).ToList();
+            isSortedAscending = true;
+            activeSortColumn = columnName;
+
+        }
+        else
+        {
+            if (isSortedAscending)
+            {
+                categoryViewModelList = categoryViewModelList.OrderByDescending(x => x.GetType().GetProperty(columnName).GetValue(x, null)).ToList();
+            }
+            else
+            {
+                categoryViewModelList = categoryViewModelList.OrderBy(x => x.GetType().GetProperty(columnName).GetValue(x, null)).ToList();
+            }
+
+            isSortedAscending = !isSortedAscending;
+        }
+    }
+
+    private string SetSortIcon(string columnName)
+    {
+        if (activeSortColumn != columnName)
+        {
+            return string.Empty;
+        }
+        if (isSortedAscending)
+        {
+            return "fa-sort-up";
+        }
+        else
+        {
+            return "fa-sort-down";
+        }
+    }
+
+    private List<CategoryViewModel> GetCategoryViewModelList(List<Category> CategoryList)
+    {
+        List<CategoryViewModel> CategoryViewModelList = new List<CategoryViewModel>();
+        foreach (var category in CategoryList)
+        {
+            CategoryViewModelList.Add(new CategoryViewModel
+            {
+                ID = category.ID,
+                Name = category.Name,
+                WeightMin = category.WeightMin,
+                WeightMax = category.WeightMax,
+                IconPath = category.IconPath,
+
+                WeightEditable = category.WeightMin == categoryList.Min(c => c.WeightMin) || category.WeightMax == categoryList.Max(c => c.WeightMax)
+            });
+        }
+        return CategoryViewModelList;
+    }
+
+    protected class CategoryViewModel
+    {
+        public int ID { get; set; }
+
+        [Required]
+        [StringLength(250, ErrorMessage = "Name max length is 250.")]
+        public string Name { get; set; }
+
+        [Required]
+        [Range(0, 99999, ErrorMessage = "WeightMin must be between 0 and 99999.")]
+        public int WeightMin { get; set; }
+
+        [Required]
+        [Range(0, 99999, ErrorMessage = "WeightMax must be between 0 and 99999.")]
+        public int WeightMax { get; set; }
+        public string IconPath { get; set; }
+
+        public bool WeightEditable { get; set; }
+    }
+}

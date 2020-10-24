@@ -1,0 +1,204 @@
+﻿@page "/manufacturers"
+
+@using BlazorCRUD.Entities
+@using BlazorCRUD.Contracts
+@inject IManufacturersManager manufacturersManager
+
+<link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+<style>
+    .sort-th {
+        cursor: pointer;
+    }
+
+    .fa {
+        float: right;
+    }
+</style>
+
+<table width="100%" border="0">
+
+    <tr valign="top">
+
+        <td height="100%" width="60%">
+
+
+            <h1>
+                Manufacturers
+            </h1>
+
+            <div>
+                <a class="btn btn-primary" @onclick="() => AddManufacturer()">Add</a>
+            </div>
+
+            <br />
+
+            @if (manufacturersModel == null)
+            {
+                <p><em>Loading...</em></p> }
+            else
+            {
+                <table class="table table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th class="sort-th" @onclick="@(() => SortTable("ID"))">
+                                ID
+                                <span class="fa @(SetSortIcon("ID"))"></span>
+                            </th>
+                            <th class="sort-th" @onclick="@(() => SortTable("Name"))">
+                                Name
+                                <span class="fa @(SetSortIcon("Name"))"></span>
+                            </th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var manufacturer in manufacturersModel)
+                        {
+                            <tr>
+                                <td>@manufacturer.ID</td>
+                                <td>@manufacturer.Name</td>
+                                <td>
+                                    <a class="btn btn-primary" @onclick="() => EditManufacturer(manufacturer)">Edit</a>
+                                    <a class="btn btn-danger" @onclick="() => DeleteManufacturer(manufacturer.ID)">Delete</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>}
+
+        </td>
+
+        <td height="100%" width="10%" />
+
+        <td height="100%" width="30%">
+            @if (selectedManufacturer != null)
+            {
+                <div>
+                    <br /> <br /> <br />
+
+                    <h4>@editMessage</h4>
+
+                    <EditForm Model="@selectedManufacturer" OnValidSubmit="@HandleValidSubmit">
+                        <DataAnnotationsValidator />
+                
+                        <br/>
+                        <label class="control-label" for="Name">Name</label>
+                        <input class="form-control" id="Name" @bind-value="@selectedManufacturer.Name" />
+                        <ValidationMessage For="@(() => selectedManufacturer.Name)" />
+
+                        <br/>
+                        @*<button type="button" class="btn btn-primary" @onclick="() => UpdateManufacturer(selectedManufacturer)">Save</button>*@
+                        <button class="btn btn-primary" type="submit">Save</button>
+                        <button class="btn btn-danger" @onclick="() => Cancel()">Cancel</button>
+                    </EditForm>
+                </div>
+            }
+        </td>
+    </tr>
+
+</table>
+
+
+            @code {
+                List<Manufacturer> manufacturersModel;
+                Manufacturer selectedManufacturer;
+                string editMessage;
+
+                protected override async Task OnInitializedAsync()
+                {
+                    manufacturersModel = await manufacturersManager.ListAll();
+                    selectedManufacturer = null;
+                    editMessage = string.Empty;
+                }
+
+                protected void AddManufacturer()
+                {
+                    selectedManufacturer = new Manufacturer();
+                    editMessage = "New Manufacturer";
+                }
+
+
+                protected async Task DeleteManufacturer(int id)
+                {
+                    await manufacturersManager.Delete(id);
+                    manufacturersModel = await manufacturersManager.ListAll();
+                }
+
+                protected void EditManufacturer(Manufacturer manufacturer)
+                {
+                    selectedManufacturer = manufacturer;
+                    editMessage = string.Concat("Manufacturer Id = ", manufacturer.ID);
+                }
+
+                protected async Task UpdateManufacturer(Manufacturer manufacturer)
+                {
+                    if (manufacturer.ID > 0)
+                    {
+                        await manufacturersManager.Update(manufacturer);
+                    }
+                    else
+                    {
+                        await manufacturersManager.Create(manufacturer);
+                    }
+                    await OnInitializedAsync();
+                }
+
+                protected async Task Cancel()
+                {
+                    await OnInitializedAsync();
+                }
+
+                protected async void HandleValidSubmit()
+                {
+                    if (selectedManufacturer != null)
+                    {
+                        await UpdateManufacturer(selectedManufacturer);
+
+                    }
+                }
+
+                private bool isSortedAscending;
+                private string activeSortColumn;
+
+                private void SortTable(string columnName)
+                {
+                    if (columnName != activeSortColumn)
+                    {
+                        manufacturersModel = manufacturersModel.OrderBy(x => x.GetType().GetProperty(columnName).GetValue(x, null)).ToList();
+                        isSortedAscending = true;
+                        activeSortColumn = columnName;
+
+                    }
+                    else
+                    {
+                        if (isSortedAscending)
+                        {
+                            manufacturersModel = manufacturersModel.OrderByDescending(x => x.GetType().GetProperty(columnName).GetValue(x, null)).ToList();
+                        }
+                        else
+                        {
+                            manufacturersModel = manufacturersModel.OrderBy(x => x.GetType().GetProperty(columnName).GetValue(x, null)).ToList();
+                        }
+
+                        isSortedAscending = !isSortedAscending;
+                    }
+                }
+
+                private string SetSortIcon(string columnName)
+                {
+                    if (activeSortColumn != columnName)
+                    {
+                        return string.Empty;
+                    }
+                    if (isSortedAscending)
+                    {
+                        return "fa-sort-up";
+                    }
+                    else
+                    {
+                        return "fa-sort-down";
+                    }
+                }
+
+            }
