@@ -1,5 +1,19 @@
 USE [VehicleHub]
 GO
+
+IF OBJECT_ID('[dbo].[Vehicles]', 'U') IS NOT NULL drop table [dbo].[Vehicles]
+IF OBJECT_ID('[dbo].[Manufacturers]', 'U') IS NOT NULL drop table [dbo].[Manufacturers]
+IF OBJECT_ID('[dbo].[Categories]', 'U') IS NOT NULL drop table [dbo].[Categories]
+
+IF OBJECT_ID('[dbo].[SP_Add_Vehicle]', 'P') IS NOT NULL drop procedure [dbo].[SP_Add_Vehicle]
+IF OBJECT_ID('[dbo].[SP_UPDATE_Vehicle]', 'P') IS NOT NULL drop procedure [dbo].[SP_UPDATE_Vehicle]
+
+IF OBJECT_ID('[dbo].[SP_Add_Manufacturer]', 'P') IS NOT NULL drop procedure [dbo].[SP_Add_Manufacturer]
+IF OBJECT_ID('[dbo].[SP_UPDATE_Manufacturer]', 'P') IS NOT NULL drop procedure [dbo].[SP_UPDATE_Manufacturer]
+
+IF OBJECT_ID('[dbo].[SP_Add_Category]', 'P') IS NOT NULL drop procedure [dbo].[SP_Add_Category]
+IF OBJECT_ID('[dbo].[SP_UPDATE_Category]', 'P') IS NOT NULL drop procedure [dbo].[SP_UPDATE_Category]
+
 /****** Object:  Table [dbo].[Manufacturers] ******/
 SET ANSI_NULLS ON
 GO
@@ -168,14 +182,23 @@ AS
 
   UPDATE [Vehicles] SET OwnerName=@OwnerName, ManufacturerId=@ManufacturerId, YearOfManufactue=@YearOfManufactue, WeightInKilo=@WeightInKilo  WHERE ID = @Id 
              
-    END;    
+    END
 
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
  
-INSERT  INTO [Vehicles] (OwnerName, ManufacturerId, YearOfManufactue, WeightInKilo)    
-		VALUES  ( 'John', 1, 2010,100 ),( 'Andrew', 2, 2019,300 ), ( 'joe', 5, 2015,200 )
+INSERT  INTO [dbo].[Vehicles] (OwnerName, ManufacturerId, YearOfManufactue, WeightInKilo)    
+		VALUES  ( 'John', 1, 2010,300 ),( 'Andrew', 2, 2019,1300 ), ( 'joe', 5, 2015,2600 )
 		
-INSERT  INTO [Categories](Name, WeightMin, WeightMax, IconPath)    
+INSERT  INTO [dbo].[Categories](Name, WeightMin, WeightMax, IconPath)    
         VALUES  ('Light', 0, 500, '/Image/a.png'), ('Medium', 501, 2500, '/Image/b.png'), ('Heavy', 2501, 9999, '/Image/c.png')     
 		
-INSERT  INTO [Manufacturers](Name)    
+INSERT  INTO [dbo].[Manufacturers](Name)    
         VALUES  ('Mazda'), ('Mercedes'), ('Honda'), ('Ferrari'), ('Toyota')
+
+
+select * from Vehicles
+select * from Manufacturers
+select * from Categories
