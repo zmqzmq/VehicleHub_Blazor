@@ -10,23 +10,22 @@
         "projectUniqueName": "D:\\zmq\\GitHub\\VehicleHub_Blazor\\BlazorCRUD\\BlazorCRUD.csproj",
         "projectName": "BlazorCRUD",
         "projectPath": "D:\\zmq\\GitHub\\VehicleHub_Blazor\\BlazorCRUD\\BlazorCRUD.csproj",
-        "packagesPath": "C:\\Users\\My\\.nuget\\packages\\",
+        "packagesPath": "C:\\Users\\yunfe\\.nuget\\packages\\",
         "outputPath": "D:\\zmq\\GitHub\\VehicleHub_Blazor\\BlazorCRUD\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "C:\\Microsoft\\Xamarin\\NuGet\\",
           "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
         ],
         "configFilePaths": [
-          "C:\\Users\\My\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
+          "C:\\Users\\yunfe\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
           "netcoreapp3.0"
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "http://nuget.org": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -98,7 +97,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.201\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.402\\RuntimeIdentifierGraph.json"
         }
       }
     }
