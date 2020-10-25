@@ -33,7 +33,7 @@
 
             <br />
 
-            @if (manufacturersModel == null)
+            @if (manufacturerList == null)
             {
                 <p><em>Loading...</em></p> }
             else
@@ -53,7 +53,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var manufacturer in manufacturersModel)
+                        @foreach (var manufacturer in manufacturerList)
                         {
                             <tr>
                                 <td>@manufacturer.ID</td>
@@ -101,13 +101,13 @@
 
 
             @code {
-                List<Manufacturer> manufacturersModel;
+                List<Manufacturer> manufacturerList;
                 Manufacturer selectedManufacturer;
                 string editMessage;
 
                 protected override async Task OnInitializedAsync()
                 {
-                    manufacturersModel = await manufacturersManager.ListAll();
+                    manufacturerList = await manufacturersManager.ListAll();
                     selectedManufacturer = null;
                     editMessage = string.Empty;
                 }
@@ -122,7 +122,7 @@
                 protected async Task DeleteManufacturer(int id)
                 {
                     await manufacturersManager.Delete(id);
-                    manufacturersModel = await manufacturersManager.ListAll();
+                    manufacturerList = await manufacturersManager.ListAll();
                 }
 
                 protected void EditManufacturer(Manufacturer manufacturer)
@@ -165,7 +165,7 @@
                 {
                     if (columnName != activeSortColumn)
                     {
-                        manufacturersModel = manufacturersModel.OrderBy(x => x.GetType().GetProperty(columnName).GetValue(x, null)).ToList();
+                        manufacturerList = manufacturerList.OrderBy(x => x.GetType().GetProperty(columnName).GetValue(x, null)).ToList();
                         isSortedAscending = true;
                         activeSortColumn = columnName;
 
@@ -174,11 +174,11 @@
                     {
                         if (isSortedAscending)
                         {
-                            manufacturersModel = manufacturersModel.OrderByDescending(x => x.GetType().GetProperty(columnName).GetValue(x, null)).ToList();
+                            manufacturerList = manufacturerList.OrderByDescending(x => x.GetType().GetProperty(columnName).GetValue(x, null)).ToList();
                         }
                         else
                         {
-                            manufacturersModel = manufacturersModel.OrderBy(x => x.GetType().GetProperty(columnName).GetValue(x, null)).ToList();
+                            manufacturerList = manufacturerList.OrderBy(x => x.GetType().GetProperty(columnName).GetValue(x, null)).ToList();
                         }
 
                         isSortedAscending = !isSortedAscending;
